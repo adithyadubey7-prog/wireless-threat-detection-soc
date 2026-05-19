@@ -36,35 +36,63 @@ def get_stats():
 
     alerts = get_all_alerts()
 
-    raw_output = scan_wifi_networks()
+    history = get_scan_history()
 
-    parsed_networks = parse_wifi_output(
-        raw_output
-    )
 
     total_alerts = len(alerts)
 
     critical_alerts = len([
-        alert for alert in alerts
+
+        alert
+        for alert in alerts
+
         if alert["severity"] == "critical"
     ])
 
+
     duplicate_ssids = len([
-        alert for alert in alerts
-        if alert["alert_type"] == "Duplicate SSID"
+
+        alert
+        for alert in alerts
+
+        if "Duplicate" in alert["alert_type"]
     ])
+
+
+    total_networks = 0
+
+    if history:
+
+        total_networks = history[-1][
+            "networks_detected"
+        ]
+
+
+    last_scan = "N/A"
+
+    if history:
+
+        last_scan = history[-1][
+            "timestamp"
+        ]
+
 
     return {
 
-        "total_networks": len(
-            parsed_networks
-        ),
+        "total_networks":
+            total_networks,
 
-        "total_alerts": total_alerts,
+        "total_alerts":
+            total_alerts,
 
-        "critical_alerts": critical_alerts,
+        "critical_alerts":
+            critical_alerts,
 
-        "duplicate_ssids": duplicate_ssids
+        "duplicate_ssids":
+            duplicate_ssids,
+
+        "last_scan":
+            last_scan
     }
 
 @router.get("/severity-data")
@@ -72,35 +100,63 @@ def severity_data():
 
     alerts = get_all_alerts()
 
+
     critical = len([
-        alert for alert in alerts
+
+        alert
+        for alert in alerts
+
         if alert["severity"] == "critical"
     ])
 
     high = len([
-        alert for alert in alerts
+
+        alert
+        for alert in alerts
+
         if alert["severity"] == "high"
     ])
 
     medium = len([
-        alert for alert in alerts
+
+        alert
+        for alert in alerts
+
         if alert["severity"] == "medium"
     ])
 
     low = len([
-        alert for alert in alerts
+
+        alert
+        for alert in alerts
+
         if alert["severity"] == "low"
     ])
 
+
     return {
 
-        "critical": critical,
+        "labels": [
 
-        "high": high,
+            "Critical",
 
-        "medium": medium,
+            "High",
 
-        "low": low
+            "Medium",
+
+            "Low"
+        ],
+
+        "values": [
+
+            critical,
+
+            high,
+
+            medium,
+
+            low
+        ]
     }
 
 @router.get("/trend-data")

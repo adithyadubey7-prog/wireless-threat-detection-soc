@@ -1,5 +1,27 @@
 import sqlite3
 import json
+from datetime import datetime, timedelta
+
+def convert_to_ist(timestamp_string):
+
+    utc_time = datetime.strptime(
+
+        timestamp_string,
+
+        "%Y-%m-%d %H:%M:%S"
+    )
+
+    ist_time = utc_time + timedelta(
+
+        hours=5,
+
+        minutes=30
+    )
+
+    return ist_time.strftime(
+
+        "%d-%m-%Y %I:%M:%S %p"
+    )
 
 DATABASE_NAME = "wireless_soc.db"
 
@@ -229,7 +251,7 @@ def get_all_alerts():
 
             "id": row[0],
 
-            "timestamp": row[1],
+            "timestamp": convert_to_ist(row[1]),
 
             "alert_type": row[2],
 
@@ -259,15 +281,19 @@ def get_scan_history():
 
         SELECT
             timestamp,
+            networks_detected,
             alerts_generated
 
         FROM scan_history
 
-        ORDER BY timestamp ASC
+        ORDER BY id ASC
 
     """)
 
     rows = cursor.fetchall()
+
+    connection.close()
+
 
     history = []
 
@@ -275,12 +301,12 @@ def get_scan_history():
 
         history.append({
 
-            "timestamp": row[0],
+            "timestamp": convert_to_ist(row[0]),
 
-            "alerts_generated": row[1]
+            "networks_detected": row[1],
+
+            "alerts_generated": row[2]
         })
-
-    connection.close()
 
     return history
 

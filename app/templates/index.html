@@ -22,472 +22,224 @@
 
 <body>
 
-    <div class="container">
+    <div class="dashboard">
 
-        <h1>
-            Wireless Threat Detection SOC
-        </h1>
+        <aside class="sidebar">
 
-        <div class="stats-grid">
+            <h2>
+                Wireless SOC
+            </h2>
 
-            <div class="stat-card">
+            <p class="status-live">
+                ● Live Monitoring
+            </p>
 
-                <h3>Last Scan</h3>
+            <button onclick="runScan()">
 
-                <p id="last-scan">
-                    Never
-                </p>
+                Run Scan
 
-            </div>
+            </button>
 
-            <div class="stat-card">
+        </aside>
 
-                <h3>Total Networks</h3>
 
-                <p id="total-networks">0</p>
+        <main class="main-content">
 
-            </div>
+            <header class="topbar">
 
-            <div class="stat-card">
+                <h1>
+                    Wireless Threat Detection
+                </h1>
 
-                <h3>Total Alerts</h3>
+            </header>
 
-                <p id="total-alerts">0</p>
 
-            </div>
+            <section class="stats-grid">
 
-            <div class="stat-card">
+                <div class="stat-card">
 
-                <h3>Critical Alerts</h3>
+                    <h3>
+                        Last Scan
+                    </h3>
 
-                <p id="critical-alerts">0</p>
+                    <p id="last-scan">
 
-            </div>
+                        --:--:--
 
-            <div class="stat-card">
-
-                <h3>Duplicate SSIDs</h3>
-
-                <p id="duplicate-ssids">0</p>
-
-            </div>
-
-        </div>
-
-        <div class="chart-container">
-
-            <canvas id="severityChart">
-
-            </canvas>
-
-        </div>
-
-        <div class="chart-container">
-
-            <canvas id="trendChart">
-
-            </canvas>
-
-        </div>
-
-        <button onclick="runScan()">
-            Run Wireless Scan
-        </button>
-
-        <div class="filter-bar">
-
-            <input
-                type="text"
-                id="searchInput"
-                placeholder="Search SSID..."
-            >
-
-            <select id="severityFilter">
-
-                <option value="">
-                    All Severities
-                </option>
-
-                <option value="critical">
-                    Critical
-                </option>
-
-                <option value="high">
-                    High
-                </option>
-
-                <option value="medium">
-                    Medium
-                </option>
-
-                <option value="low">
-                    Low
-                </option>
-
-            </select>
-
-        </div>
-
-        <h2>
-            Alerts
-        </h2>
-
-        <div id="alerts-container">
-
-        </div>
-
-        <div id="investigationModal"
-            class="modal">
-
-            <div class="modal-content">
-
-                <span class="close-button"
-                    onclick="closeModal()">
-
-                    &times;
-
-                </span>
-
-                <div id="modalBody">
+                    </p>
 
                 </div>
 
-            </div>
+                <div class="stat-card">
+
+                    <h3>Total Networks</h3>
+
+                    <p id="total-networks">0</p>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <h3>Total Alerts</h3>
+
+                    <p id="total-alerts">0</p>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <h3>Critical Alerts</h3>
+
+                    <p id="critical-alerts">0</p>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <h3>Duplicate SSIDs</h3>
+
+                    <p id="duplicate-ssids">0</p>
+
+                </div>
+
+            </section>
+
+
+            <section class="charts-grid">
+
+                <div class="chart-card">
+
+                    <h3>
+                        Severity Distribution
+                    </h3>
+
+                    <div class="chart-wrapper">
+
+                        <canvas id="severityChart">
+
+                        </canvas>
+
+                    </div>
+
+                </div>
+
+                <div class="chart-card">
+
+                    <h3>
+                        Alert Trends
+                    </h3>
+
+                    <div class="chart-wrapper">
+
+                        <canvas id="trendChart">
+
+                        </canvas>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <section class="alerts-section">
+
+                <div class="alerts-header">
+
+                    <h2>
+                        Threat Alerts
+                    </h2>
+
+                    <div class="filter-bar">
+
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="Search SSID..."
+                        >
+
+                        <select id="severityFilter">
+
+                            <option value="">
+                                All Severities
+                            </option>
+
+                            <option value="critical">
+                                Critical
+                            </option>
+
+                            <option value="high">
+                                High
+                            </option>
+
+                            <option value="medium">
+                                Medium
+                            </option>
+
+                            <option value="low">
+                                Low
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <div id="alerts-container">
+
+                </div>
+
+            </section>
+
+        </main>
 
     </div>
+
+    <div id="investigationModal"
+        class="modal">
+
+        <div class="modal-content">
+
+            <span class="close-button"
+                onclick="closeModal()">
+
+                &times;
+
+            </span>
+
+            <div id="modalBody">
+
+            </div>
+
+        </div>
 
     </div>
 
     <script>
 
-        let allAlerts = []
+    let allAlerts = []
 
-        const socket = new WebSocket(
+    let severityChart = null
 
-            "ws://127.0.0.1:8000/ws"
-        )
-        socket.onmessage = function(event) {
+    let trendChart = null
 
-            const data =
-                JSON.parse(event.data)
 
-            if (
-                data.type === "new_alert"
-            ) {
+    const socket = new WebSocket(
 
-                console.log(
-                    "New Alert Received",
-                    data.alert
-                )
+        "ws://127.0.0.1:8000/ws"
+    )
 
-                loadAlerts()
 
-                loadStats()
+    socket.onmessage = function(event) {
 
-                loadSeverityChart()
+        const data =
+            JSON.parse(event.data)
 
-                loadTrendChart()
-            }
-        }
-
-        let severityChart = null
-        let trendChart = null
-
-        async function runScan() {
-
-            const response =
-                await fetch("/scan")
-
-            const data =
-                await response.json()
-
-            loadAlerts()
-            loadStats()
-            loadSeverityChart()
-            loadTrendChart()
-            document.getElementById(
-                "last-scan"
-            ).innerText =
-                new Date().toLocaleTimeString()
-        }
-
-
-        async function loadAlerts() {
-
-            const response =
-                await fetch("/alerts")
-
-            const data =
-                await response.json()
-
-            
-            allAlerts = data.alerts
-
-            renderAlerts(allAlerts)}
-
-            function renderAlerts(alerts) {
-
-                const container =
-                    document.getElementById(
-                        "alerts-container"
-                    )
-
-                container.innerHTML = ""
-
-
-                alerts.forEach(alert => {
-
-                    container.innerHTML += `
-
-                        <div class="
-                            alert-card
-                            ${alert.severity}
-                        "
-                        
-                        onclick='openInvestigation(
-                            ${JSON.stringify(alert)}
-                        )'>
-
-                            <h3>
-                                ${alert.alert_type}
-                            </h3>
-
-                            <p>
-                                <strong>SSID:</strong>
-                                ${alert.ssid}
-                            </p>
-
-                            <p>
-                                <strong>Severity:</strong>
-                                ${alert.severity}
-                            </p>
-
-                            <p>
-
-                                <strong>Status:</strong>
-
-                                <span class="
-                                    status-badge
-                                    ${alert.status}
-                                ">
-
-                                    ${alert.status}
-
-                                </span>
-
-                            </p>
-
-                            <p>
-                                <strong>Threat Score:</strong>
-                                ${alert.threat_score}
-                            </p>
-
-                            <p>
-                                <strong>Timestamp:</strong>
-                                ${alert.timestamp}
-                            </p>
-
-                            <div class="alert-actions">
-
-                                <button
-                                    onclick="
-                                        updateAlertStatus(
-                                            ${alert.id},
-                                            'investigating'
-                                        )
-                                    "
-                                >
-
-                                    Investigate
-
-                                </button>
-
-                                <button
-                                    onclick="
-                                        updateAlertStatus(
-                                            ${alert.id},
-                                            'resolved'
-                                        )
-                                    "
-                                >
-
-                                    Resolve
-
-                                </button>
-
-                                <button
-                                    onclick="
-                                        updateAlertStatus(
-                                            ${alert.id},
-                                            'false_positive'
-                                        )
-                                    "
-                                >
-
-                                    False Positive
-
-                                </button>
-
-                            </div>
-
-                            <p>
-                                ${alert.message}
-                            </p>
-
-                        </div>
-                    `
-                })
-            }
-        
-        function openInvestigation(alert) {
-
-            const modal =
-                document.getElementById(
-                    "investigationModal"
-                )
-
-            const body =
-                document.getElementById(
-                    "modalBody"
-                )
-
-            let detailsHTML = ""
-
-            if (
-                alert.details
-                &&
-                alert.details.length > 0
-            ) {
-
-                alert.details.forEach(net => {
-
-                    detailsHTML += `
-
-                        <div class="network-detail">
-
-                            <p>
-                                <strong>BSSID:</strong>
-                                ${net.bssid}
-                            </p>
-
-                            <p>
-                                <strong>Signal:</strong>
-                                ${net.signal}
-                            </p>
-
-                            <p>
-                                <strong>Channel:</strong>
-                                ${net.channel}
-                            </p>
-
-                            <p>
-                                <strong>Authentication:</strong>
-                                ${net.authentication}
-                            </p>
-
-                        </div>
-                    `
-                })
-            }
-
-            body.innerHTML = `
-
-                <h2>${alert.alert_type}</h2>
-
-                <p>
-                    <strong>SSID:</strong>
-                    ${alert.ssid}
-                </p>
-
-                <p>
-                    <strong>Severity:</strong>
-                    ${alert.severity}
-                </p>
-
-                <p>
-                    <strong>Threat Score:</strong>
-                    ${alert.threat_score}
-                </p>
-
-                <p>
-                    ${alert.message}
-                </p>
-
-                <hr>
-
-                <h3>
-                    Related Networks
-                </h3>
-
-                ${detailsHTML}
-            `
-
-            modal.style.display = "block"
-        }
-
-
-        function closeModal() {
-
-            document.getElementById(
-                "investigationModal"
-            ).style.display = "none"
-        }
-
-        function applyFilters() {
-
-            const searchText =
-                document.getElementById(
-                    "searchInput"
-                ).value.toLowerCase()
-
-            const severity =
-                document.getElementById(
-                    "severityFilter"
-                ).value
-
-
-            const filteredAlerts =
-                allAlerts.filter(alert => {
-
-                    const matchesSearch =
-
-                        alert.ssid
-                            .toLowerCase()
-                            .includes(searchText)
-
-                    const matchesSeverity =
-
-                        severity === ""
-                        ||
-                        alert.severity === severity
-
-                    return (
-                        matchesSearch
-                        &&
-                        matchesSeverity
-                    )
-                })
-
-            renderAlerts(filteredAlerts)
-        }
-
-        async function updateAlertStatus(
-
-            alertId,
-
-            status
-
+        if (
+            data.type === "new_alert"
         ) {
 
-            await fetch(
-
-                `/alerts/${alertId}/status?status=${status}`,
-
-                {
-                    method: "POST"
-                }
-            )
-
             loadAlerts()
 
             loadStats()
@@ -496,153 +248,467 @@
 
             loadTrendChart()
         }
+    }
 
-        async function loadStats() {
 
-            const response =
-                await fetch("/stats")
+    async function loadAlerts() {
 
-            const stats =
-                await response.json()
+        const response =
+            await fetch("/alerts")
 
+        const data =
+            await response.json()
+
+        allAlerts = data.alerts
+
+        renderAlerts(allAlerts)
+    }
+
+
+    function renderAlerts(alerts) {
+
+        const container =
             document.getElementById(
-                "total-networks"
-            ).innerText =
-                stats.total_networks
+                "alerts-container"
+            )
 
-            document.getElementById(
-                "total-alerts"
-            ).innerText =
-                stats.total_alerts
+        container.innerHTML = ""
 
-            document.getElementById(
-                "critical-alerts"
-            ).innerText =
-                stats.critical_alerts
 
+        alerts.forEach(alert => {
+
+            container.innerHTML += `
+
+                <div class="
+                    alert-card
+                    ${alert.severity}
+                "
+
+                onclick='openInvestigation(
+                    ${JSON.stringify(alert)}
+                )'
+                >
+
+                    <h3>
+                        ${alert.alert_type}
+                    </h3>
+
+                    <p>
+                        <strong>SSID:</strong>
+                        ${alert.ssid}
+                    </p>
+
+                    <p>
+                        <strong>Severity:</strong>
+                        ${alert.severity}
+                    </p>
+
+                    <p>
+
+                        <strong>Status:</strong>
+
+                        <span class="
+                            status-badge
+                            ${alert.status}
+                        ">
+
+                            ${alert.status}
+
+                        </span>
+
+                    </p>
+
+                    <p>
+                        <strong>Threat Score:</strong>
+                        ${alert.threat_score}
+                    </p>
+
+                    <p>
+                        <strong>Timestamp:</strong>
+                        ${alert.timestamp}
+                    </p>
+
+                    <p>
+                        ${alert.message}
+                    </p>
+
+                    <div class="alert-actions">
+
+                        <button
+                            onclick="
+                                event.stopPropagation()
+
+                                updateAlertStatus(
+                                    ${alert.id},
+                                    'investigating'
+                                )
+                            "
+                        >
+
+                            Investigate
+
+                        </button>
+
+                        <button
+                            onclick="
+                                event.stopPropagation()
+
+                                updateAlertStatus(
+                                    ${alert.id},
+                                    'resolved'
+                                )
+                            "
+                        >
+
+                            Resolve
+
+                        </button>
+
+                        <button
+                            onclick="
+                                event.stopPropagation()
+
+                                updateAlertStatus(
+                                    ${alert.id},
+                                    'false_positive'
+                                )
+                            "
+                        >
+
+                            False Positive
+
+                        </button>
+
+                    </div>
+
+                </div>
+            `
+        })
+    }
+
+
+    async function loadStats() {
+
+        const response =
+            await fetch("/stats")
+
+        const data =
+            await response.json()
+
+        document.getElementById(
+            "last-scan"
+        ).innerText =
+            data.last_scan
+
+        document.getElementById(
+            "total-networks"
+        ).innerText =
+            data.total_networks
+
+        document.getElementById(
+            "total-alerts"
+        ).innerText =
+            data.total_alerts
+
+        document.getElementById(
+            "critical-alerts"
+        ).innerText =
+            data.critical_alerts
+
+        document.getElementById(
+            "duplicate-ssids"
+        ).innerText =
+            data.duplicate_ssids
+    }
+
+
+    async function loadSeverityChart() {
+
+        const response =
+            await fetch("/severity-data")
+
+        const data =
+            await response.json()
+
+
+        const ctx =
             document.getElementById(
-                "duplicate-ssids"
-            ).innerText =
-                stats.duplicate_ssids
+                "severityChart"
+            )
+
+
+        if (severityChart) {
+
+            severityChart.destroy()
         }
 
-        async function loadSeverityChart() {
 
-            const response =
-                await fetch("/severity-data")
+        severityChart = new Chart(ctx, {
 
-            const data =
-                await response.json()
+            type: "pie",
 
-            const ctx =
-                document.getElementById(
-                    "severityChart"
-                )
+            data: {
 
-            if (severityChart) {
+                labels: data.labels,
 
-                severityChart.destroy()
-            }
+                datasets: [{
 
-            severityChart = new Chart(ctx, {
+                    data: data.values,
 
-                type: "doughnut",
+                    backgroundColor: [
 
-                data: {
+                        "#ef4444",
 
-                    labels: [
-                        "Critical",
-                        "High",
-                        "Medium",
-                        "Low"
+                        "#f97316",
+
+                        "#eab308",
+
+                        "#3b82f6"
                     ],
 
-                    datasets: [{
+                    borderWidth: 1
+                }]
+            },
 
-                        data: [
+            options: {
 
-                            data.critical,
+                responsive: true,
 
-                            data.high,
+                maintainAspectRatio: false,
 
-                            data.medium,
+                plugins: {
 
-                            data.low
-                        ],
+                    legend: {
 
-                        backgroundColor: [
+                        position: "top",
 
-                            "#ef4444",
+                        labels: {
 
-                            "#f97316",
-
-                            "#eab308",
-
-                            "#3b82f6"
-                        ]
-                    }]
+                            color: "white"
+                        }
+                    }
                 }
-            })
-        }
-
-        async function loadTrendChart() {
-
-            const response =
-                await fetch("/trend-data")
-
-            const data =
-                await response.json()
-
-            const labels =
-                data.history.map(
-                    item => item.timestamp
-                )
-
-            const alertCounts =
-                data.history.map(
-                    item => item.alerts_generated
-                )
-
-            const ctx =
-                document.getElementById(
-                    "trendChart"
-                )
-
-            if (trendChart) {
-
-                trendChart.destroy()
             }
+        })
+    }
 
-            trendChart = new Chart(ctx, {
+    async function loadTrendChart() {
 
-                type: "line",
+        const response =
+            await fetch("/trend-data")
 
-                data: {
+        const data =
+            await response.json()
 
-                    labels: labels,
+        const labels =
+            data.history.map(
+                item => item.timestamp
+            )
 
-                    datasets: [{
+        const alertCounts =
+            data.history.map(
+                item => item.alerts_generated
+            )
 
-                        label: "Alerts Generated",
+        const ctx =
+            document.getElementById(
+                "trendChart"
+            )
 
-                        data: alertCounts,
+        if (trendChart) {
 
-                        borderColor: "#60a5fa",
-
-                        backgroundColor:
-                            "rgba(96,165,250,0.2)",
-
-                        tension: 0.3
-                    }]
-                }
-            })
+            trendChart.destroy()
         }
+
+        trendChart = new Chart(ctx, {
+
+            type: "line",
+
+            data: {
+
+                labels: labels,
+
+                datasets: [{
+
+                    label:
+                        "Alerts Generated",
+
+                    data: alertCounts
+                }]
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                plugins: {
+
+                    legend: {
+
+                        labels: {
+
+                            color: "white"
+                        }
+                    }
+                },
+
+                scales: {
+
+                    x: {
+
+                        ticks: {
+
+                            color: "white"
+                        }
+                    },
+
+                    y: {
+
+                        ticks: {
+
+                            color: "white"
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+
+    function applyFilters() {
+
+        const searchText =
+            document.getElementById(
+                "searchInput"
+            ).value.toLowerCase()
+
+        const severity =
+            document.getElementById(
+                "severityFilter"
+            ).value
+
+
+        const filteredAlerts =
+            allAlerts.filter(alert => {
+
+                const matchesSearch =
+
+                    alert.ssid
+                        .toLowerCase()
+                        .includes(searchText)
+
+                const matchesSeverity =
+
+                    severity === ""
+                    ||
+                    alert.severity === severity
+
+                return (
+                    matchesSearch
+                    &&
+                    matchesSeverity
+                )
+            })
+
+        renderAlerts(filteredAlerts)
+    }
+
+
+    async function updateAlertStatus(
+
+        alertId,
+
+        status
+
+    ) {
+
+        await fetch(
+
+            `/alerts/${alertId}/status?status=${status}`,
+
+            {
+                method: "POST"
+            }
+        )
 
         loadAlerts()
+
         loadStats()
+
         loadSeverityChart()
+
         loadTrendChart()
-       
+    }
+
+
+    function openInvestigation(alert) {
+
+        const modal =
+            document.getElementById(
+                "investigationModal"
+            )
+
+        const body =
+            document.getElementById(
+                "modalBody"
+            )
+
+        body.innerHTML = `
+
+            <h2>
+                ${alert.alert_type}
+            </h2>
+
+            <p>
+                <strong>SSID:</strong>
+                ${alert.ssid}
+            </p>
+
+            <p>
+                <strong>Severity:</strong>
+                ${alert.severity}
+            </p>
+
+            <p>
+                <strong>Threat Score:</strong>
+                ${alert.threat_score}
+            </p>
+
+            <p>
+                ${alert.message}
+            </p>
+        `
+
+        modal.style.display = "block"
+    }
+
+
+    function closeModal() {
+
+        document.getElementById(
+            "investigationModal"
+        ).style.display = "none"
+    }
+
+
+    async function runScan() {
+
+        await fetch("/scan")
+    }
+
+
+    window.onload = () => {
+
+        loadAlerts()
+
+        loadStats()
+
+        loadSeverityChart()
+
+        loadTrendChart()
+
 
         document.getElementById(
             "searchInput"
@@ -657,6 +723,7 @@
             "change",
             applyFilters
         )
+    }
 
     </script>
 
