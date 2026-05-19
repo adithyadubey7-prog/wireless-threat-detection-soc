@@ -64,7 +64,7 @@ uvicorn app.main:app --reload
 
 ## Dashboard Screenshots
 ![Dashboard](screenshots/dashboard.png)
-![Investigation] (screenshots/investigation.png)
+![Investigation](screenshots/investigation.png)
 ![Alerts](screenshots/alerts.png)
 ![Detailed report](screenshots/detailed_report.png)
 ![Console](screenshots/console.png)
